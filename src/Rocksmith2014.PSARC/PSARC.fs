@@ -166,7 +166,9 @@ type PSARC internal (source: Stream, header: Header, toc: ResizeArray<Entry>, bl
         
         tocData.Position <- 0L
         if encrypt then
-            Cryptography.encrypt tocData source tocData.Length
+            Cryptography.encrypt tocData source
+            // Ignore the zero padding from the encryption
+            source.Position <- (int64 header.ToCLength)
         else
             tocData.CopyTo source
 
@@ -278,7 +280,7 @@ type PSARC internal (source: Stream, header: Header, toc: ResizeArray<Entry>, bl
         let toc, zLengths =
             if header.IsEncrypted then
                 use decStream = MemoryStreamPool.Default.GetStream()
-                Cryptography.decrypt input decStream header.ToCLength
+                Cryptography.decrypt input decStream tocSize
 
                 if decStream.Length <> int64 tocSize then failwith "ToC decryption failed: Incorrect ToC size."
 
